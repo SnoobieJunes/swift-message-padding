@@ -1,13 +1,14 @@
 # swift-message-padding
 
 **Fixed-size bucket padding for encrypted messages.** Encryption hides *what*
-you said. It does not hide *how much* you said. This fixes that.
+you said. It does not hide *how much* you said — this narrows that leak to one
+of five buckets.
 
 [![CI](https://github.com/SnoobieJunes/swift-message-padding/actions/workflows/ci.yml/badge.svg)](https://github.com/SnoobieJunes/swift-message-padding/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Swift 6](https://img.shields.io/badge/swift-6.0-orange.svg)](https://swift.org)
 
-- **Zero dependencies.** Pure Foundation, ~120 lines.
+- **Zero dependencies.** Pure Foundation, one file.
 - **Zero opinions about your crypto.** It hands you bytes to seal and takes
   bytes back after you open them.
 - **Linux and Apple platforms.**
@@ -45,7 +46,8 @@ let sealed = try AES.GCM.seal(padded, using: key, authenticating: ad)
 let plaintext = try Padding.unpad(opened)          // back to "hello"
 ```
 
-That's the whole API.
+`pad` and `unpad` are the whole surface; `bucket(for:)` and the bucket
+constants are public for callers that need them.
 
 Default ladder: `256, 1024, 4096, 16384, 65536`. A length observation now
 carries ~2.3 bits instead of ~16. Powers of four rather than two, because fewer
@@ -67,7 +69,12 @@ u32be(plaintext length) || plaintext || 0x00 … to the bucket boundary
 
 The 4-byte length prefix sits **outside** the bucket accounting, so a plaintext
 of exactly 65536 bytes still fits the largest bucket. Padded size for bucket `B`
-is `B + 4`; with a 16-byte AEAD tag, ciphertext is `B + 4 + 16`.
+is therefore `B + 4`.
+
+What actually hits the wire depends on your AEAD framing — AES-GCM adds a 16-byte
+tag, and CryptoKit's combined representation also carries a 12-byte nonce, giving
+`B + 32`. The overhead is constant across buckets, which is the only part that
+matters here.
 
 Deterministic and zero-filled — no randomness, nothing to seed, nothing to
 reproduce in a test.
@@ -83,8 +90,8 @@ decoding to a shorter attacker-chosen plaintext. That is a correctness backstop,
 not integrity. Authenticate with your AEAD first, then unpad.
 
 **Oversize input is refused, not truncated.** Anything past the largest bucket
-throws. Chunk it yourself — silently splitting or cutting in a padding library
-is a correctness bug wearing a convenience costume.
+throws. Chunk it yourself — silently splitting or cutting here would hide a
+data-loss bug behind a convenience.
 
 ## Installation
 
@@ -106,7 +113,8 @@ swift test
 
 No simulator, no network, no clock.
 
-Verified on **macOS 26 / Swift 6.4** and **Linux aarch64 / Swift 6.2.4** — 10 tests, both.
+CI runs macOS and Linux x86-64. Also verified locally on macOS 26 / Swift 6.4
+and Linux aarch64 / Swift 6.2.4 — 10 tests, both.
 
 ## Provenance
 

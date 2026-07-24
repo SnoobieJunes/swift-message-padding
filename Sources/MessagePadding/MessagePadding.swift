@@ -20,7 +20,10 @@ import Foundation
 /// zero fill extends to the bucket boundary. The 4-byte length prefix sits
 /// *outside* the bucket accounting, so a plaintext of exactly `inlineSizeLimit`
 /// bytes still fits the largest bucket. Total padded size for bucket `B` is
-/// therefore `B + 4`, and with an AES-GCM tag the ciphertext is `B + 4 + 16`.
+/// therefore `B + 4`. What reaches the wire depends on your AEAD framing —
+/// AES-GCM adds a 16-byte tag, and CryptoKit's combined representation also
+/// carries a 12-byte nonce — but that overhead is constant across buckets,
+/// which is the only part that matters here.
 ///
 /// ```swift
 /// let padded = try Padding.pad(Data("hello".utf8))   // 260 bytes (256 + 4)
@@ -51,12 +54,13 @@ public enum Padding {
     // MARK: - Errors
 
     public enum PaddingError: Error, Equatable, Sendable {
-        /// Plaintext is larger than the largest bucket. Chunk it instead —
-        /// silently splitting or truncating here would be a correctness bug
-        /// wearing a convenience costume.
+        /// Plaintext is larger than the largest bucket. Chunk it instead:
+        /// silently splitting or truncating here would hide a data-loss bug.
         case plaintextExceedsLargestBucket(size: Int, largestBucket: Int)
-        /// The padded buffer is not a well-formed padding of any bucket:
-        /// truncated, corrupted, or tampered with.
+        /// The padded buffer is not a well-formed padding of any bucket: too
+        /// short, or its declared length does not match the bucket present.
+        /// Note that fill bytes are NOT inspected — a buffer with the right
+        /// shape but corrupted padding passes. Integrity is your AEAD's job.
         case malformedPadding
         /// A caller-supplied bucket ladder was empty or not strictly ascending.
         case invalidBuckets
