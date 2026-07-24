@@ -106,6 +106,8 @@ swift test
 
 No simulator, no network, no clock.
 
+Verified on **macOS 26 / Swift 6.4** and **Linux aarch64 / Swift 6.2.4** — 10 tests, both.
+
 ## Provenance
 
 Extracted from [Eldr](https://github.com/SnoobieJunes/Eldr), a post-quantum,
