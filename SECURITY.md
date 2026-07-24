@@ -12,7 +12,7 @@
 Include what you can: the affected version, reproduction steps or a failing
 test, and impact as you understand it.
 
-What to expect — solo-maintainer honesty:
+What to expect (single maintainer):
 
 - **Acknowledgement within 72 hours**; triage assessment within 7 days.
 - **Coordinated disclosure within 90 days** of the report — sooner when the fix

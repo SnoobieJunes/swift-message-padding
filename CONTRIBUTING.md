@@ -11,9 +11,9 @@ not need to open two PRs.
 
 - **One primitive per repo.** This library deliberately does one thing. Feature
   requests that broaden its scope will usually be declined in favour of a new,
-  separate library — that is the design, not a brush-off.
-- **Dependencies are close to sacred.** A PR that adds a dependency needs an
-  argument for why the alternative is worse.
+  separate library.
+- **New dependencies need a strong justification.** A PR adding one should
+  explain why the alternative is worse.
 - **Tests are the deliverable.** Behaviour changes need a test that fails
   before and passes after. Security-relevant behaviour needs an adversarial
   test, not just a happy-path one.

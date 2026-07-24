@@ -6,7 +6,7 @@ of five buckets.
 
 [![CI](https://github.com/SnoobieJunes/swift-message-padding/actions/workflows/ci.yml/badge.svg)](https://github.com/SnoobieJunes/swift-message-padding/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Swift 6](https://img.shields.io/badge/swift-6.0-orange.svg)](https://swift.org)
+[![swift-tools 6.0+](https://img.shields.io/badge/swift--tools-6.0%2B-orange.svg)](https://swift.org)
 
 - **Zero dependencies.** Pure Foundation, one file.
 - **Zero opinions about your crypto.** It hands you bytes to seal and takes
