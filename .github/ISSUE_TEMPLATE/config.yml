@@ -1,0 +1,7 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/SnoobieJunes/swift-message-padding/security/advisories/new
+    about: >-
+      Never open a public issue for a vulnerability. Use a private advisory,
+      or email security@auston.org. See SECURITY.md.

@@ -27,8 +27,8 @@ anyone on the path — learns a surprising amount without breaking anything:
 | a 60-byte reply to a 3 KB message | a short answer to a long question |
 | lengths matching a known template | *which* canned message you sent |
 
-Length is metadata, and metadata is what survives end-to-end encryption. It is
-also what traffic analysis is built on.
+Length is metadata that survives end-to-end encryption, and it is what traffic
+analysis is built on.
 
 ## The fix
 
@@ -36,6 +36,7 @@ Round every plaintext up to one of a small ladder of sizes before you encrypt.
 All messages in a bucket become indistinguishable by length.
 
 ```swift
+import CryptoKit
 import MessagePadding
 
 // Before your AEAD:

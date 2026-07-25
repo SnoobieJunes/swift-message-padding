@@ -8,8 +8,8 @@ import Foundation
 /// much* you said. An observer who can see ciphertext lengths — a relay, a
 /// network operator, anyone on the path — reads a surprising amount from that
 /// alone: which of two canned replies you sent, whether a message is "ok" or a
-/// paragraph, when a conversation changes character. Length is metadata, and
-/// metadata is what survives end-to-end encryption.
+/// paragraph, when a conversation changes character. Length is metadata that
+/// survives end-to-end encryption.
 ///
 /// **The fix.** Round every plaintext up to one of a small set of buckets
 /// before sealing it. All 200-byte messages and all 12-byte messages look
@@ -64,6 +64,8 @@ public enum Padding {
         case malformedPadding
         /// A caller-supplied bucket ladder was empty or not strictly ascending.
         case invalidBuckets
+        /// A negative length was passed to ``Padding/bucket(for:buckets:)``.
+        case negativeLength
     }
 
     // MARK: - API
@@ -71,7 +73,7 @@ public enum Padding {
     /// Smallest bucket that holds `length` plaintext bytes.
     public static func bucket(for length: Int, buckets: [Int] = defaultBuckets) throws -> Int {
         try validate(buckets)
-        guard length >= 0 else { throw PaddingError.malformedPadding }
+        guard length >= 0 else { throw PaddingError.negativeLength }
         guard let bucket = buckets.first(where: { $0 >= length }) else {
             throw PaddingError.plaintextExceedsLargestBucket(
                 size: length, largestBucket: buckets[buckets.count - 1])
@@ -95,11 +97,15 @@ public enum Padding {
     /// tampered buffer decodes to a *shorter, attacker-chosen* plaintext rather
     /// than failing. Run it after AEAD authentication, not instead of it.
     public static func unpad(_ padded: Data, buckets: [Int] = defaultBuckets) throws -> Data {
-        guard padded.count >= 4, let length = padded.uint32BE(at: 0) else {
-            throw PaddingError.malformedPadding
-        }
-        guard padded.count >= 4 + Int(length) else { throw PaddingError.malformedPadding }
-        guard let expectedBucket = try? bucket(for: Int(length), buckets: buckets),
+        // `Int(exactly:)`, not `Int(_:)`: `length` comes straight from
+        // attacker-controllable bytes, and on a 32-bit platform the plain
+        // conversion TRAPS for any declared length above Int32.max — a crash
+        // where the contract promises a thrown error.
+        guard padded.count >= 4, let raw = padded.uint32BE(at: 0),
+            let length = Int(exactly: raw)
+        else { throw PaddingError.malformedPadding }
+        guard padded.count >= 4 + length else { throw PaddingError.malformedPadding }
+        guard let expectedBucket = try? bucket(for: length, buckets: buckets),
             padded.count == 4 + expectedBucket
         else {
             throw PaddingError.malformedPadding
@@ -109,7 +115,7 @@ public enum Padding {
         // `4..<…` here would read below `startIndex` (and trap) for any caller
         // that passes a non-zero-based slice.
         let lo = padded.startIndex + 4
-        return padded.subdata(in: lo..<(lo + Int(length)))
+        return padded.subdata(in: lo..<(lo + length))
     }
 
     // MARK: - Internals
