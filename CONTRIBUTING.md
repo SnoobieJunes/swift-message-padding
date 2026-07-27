@@ -2,10 +2,9 @@
 
 Thanks for wanting to help.
 
-This library is **extracted from [Eldr](https://github.com/SnoobieJunes/Eldr)**,
-which remains the upstream source of truth. Changes flow Eldr → here. If your
-change also applies upstream, say so in the PR and it will be mirrored — you do
-not need to open two PRs.
+This repository is the canonical home of the library. It is one of the **Viae**
+primitives — small, zero-dependency, adversarially tested Swift packages for
+data moving between machines that do not trust each other.
 
 ## Ground rules
 

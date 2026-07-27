@@ -3,7 +3,8 @@
 import PackageDescription
 
 // swift-message-padding — fixed-size bucket padding, applied to plaintext BEFORE
-// AEAD encryption, so ciphertext length stops leaking message length.
+// AEAD encryption, so ciphertext length leaks a bucket instead of an exact
+// message length.
 //
 // ZERO dependencies, by design. One file of pure Foundation that any messenger can
 // adopt without inheriting a protocol, a crypto stack, or an opinion about how it

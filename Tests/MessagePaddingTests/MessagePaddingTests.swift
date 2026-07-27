@@ -107,4 +107,73 @@ struct MessagePaddingTests {
         #expect(a == b)
         #expect(a.dropFirst(4 + 3).allSatisfy { $0 == 0 })
     }
+
+    @Test("a negative length is refused")
+    func rejectsNegativeLength() {
+        #expect(throws: Padding.PaddingError.negativeLength) {
+            _ = try Padding.bucket(for: -1)
+        }
+    }
+
+    @Test("ladders the length prefix cannot encode are refused")
+    func rejectsLadderBeyondLengthPrefix() {
+        // The length prefix is `u32be`, so a bucket above `UInt32.max` is not
+        // expressible in this wire format. Rejecting the ladder up front is
+        // what keeps `pad` from trapping in `UInt32(plaintext.count)`.
+        // Nil on a 32-bit platform, where no `Int` that large exists to test.
+        guard let beyondPrefix = Int(exactly: UInt32.max).map({ $0 + 1 }) else { return }
+        #expect(throws: Padding.PaddingError.invalidBuckets) {
+            _ = try Padding.bucket(for: 1, buckets: [256, beyondPrefix])
+        }
+    }
+
+    @Test("an outsized declared length throws instead of trapping")
+    func rejectsOutsizedDeclaredLength() throws {
+        // `length` is read straight from attacker-controllable bytes. On a
+        // 32-bit platform — arm64_32, i.e. Apple Watch, which this package
+        // declares support for — `Int.max == Int32.max`, so evaluating
+        // `4 + length` on a declared length of 0x7FFF_FFFF overflows and traps.
+        // A crash is not the thrown error this contract promises. Both of these
+        // must throw on every platform; this test is the 32-bit regression
+        // guard and cannot itself fail where `Int` is 64 bits wide.
+        for declared in [[0x7F, 0xFF, 0xFF, 0xFF], [0xFF, 0xFF, 0xFF, 0xFF]] as [[UInt8]] {
+            var buf = try Padding.pad(Data("hi".utf8))
+            buf.replaceSubrange(buf.startIndex..<(buf.startIndex + 4), with: declared)
+            #expect(throws: Padding.PaddingError.malformedPadding) {
+                _ = try Padding.unpad(buf)
+            }
+        }
+    }
+
+    @Test("appended bytes are refused, and so is an empty buffer")
+    func rejectsTrailingBytesAndEmpty() throws {
+        let padded = try Padding.pad(Data("hello".utf8))
+        #expect(throws: Padding.PaddingError.malformedPadding) {
+            _ = try Padding.unpad(padded + Data(count: 8))
+        }
+        #expect(throws: Padding.PaddingError.malformedPadding) {
+            _ = try Padding.unpad(Data())
+        }
+    }
+
+    @Test("a ladder mismatch between the two ends is refused")
+    func rejectsLadderMismatch() throws {
+        // The ladder is part of the wire format: both ends have to agree on it.
+        // A disagreement must fail loudly rather than decode to something else.
+        let padded = try Padding.pad(Data(count: 20), buckets: [64, 512])
+        #expect(throws: Padding.PaddingError.malformedPadding) {
+            _ = try Padding.unpad(padded, buckets: [128, 512])
+        }
+    }
+
+    @Test("an in-bucket length rewrite is NOT detected — that is the AEAD's job")
+    func inBucketLengthRewriteIsNotDetected() throws {
+        // A deliberate, documented non-guarantee, pinned here so nobody mistakes
+        // the shape check for integrity. Rewriting the declared length to any
+        // other value that still maps to the bucket present is accepted, and
+        // yields a prefix of the plaintext. Only the AEAD stops that.
+        var buf = try Padding.pad(Data("attack at dawn".utf8))
+        buf[buf.startIndex + 3] = 6  // declare 6 bytes; still the 256 bucket
+        #expect(try Padding.unpad(buf) == Data("attack".utf8))
+    }
 }

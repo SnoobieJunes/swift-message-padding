@@ -23,6 +23,27 @@ jobs:
       - name: Test
         run: swift test -v
 
+  # `Package.swift` claims watchOS, which is the one supported platform where
+  # `Int` is 32 bits wide (arm64_32). `unpad` does arithmetic on an
+  # attacker-controlled length, so that target gets compiled rather than just
+  # asserted. There is no watchOS test run here — this is a build check.
+  watchos:
+    name: watchOS / arm64_32 build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: watchOS SDK
+        run: xcrun --sdk watchos --show-sdk-path
+      - name: Build for arm64_32
+        run: |
+          mkdir -p .watchos-build
+          xcrun --sdk watchos swiftc \
+            -target arm64_32-apple-watchos9.0 \
+            -swift-version 6 -strict-concurrency=complete \
+            -parse-as-library -emit-module -module-name MessagePadding \
+            Sources/MessagePadding/MessagePadding.swift \
+            -emit-module-path .watchos-build/MessagePadding.swiftmodule
+
   linux:
     name: Linux / Swift 6
     runs-on: ubuntu-latest

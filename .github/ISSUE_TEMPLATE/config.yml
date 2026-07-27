@@ -1,4 +1,6 @@
-blank_issues_enabled: false
+# Kept `true`: there are no issue templates in this repo, and disabling blank
+# issues without templates leaves no way at all to file a bug.
+blank_issues_enabled: true
 contact_links:
   - name: Report a security vulnerability
     url: https://github.com/SnoobieJunes/swift-message-padding/security/advisories/new

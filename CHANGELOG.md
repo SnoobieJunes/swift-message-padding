@@ -10,5 +10,12 @@ Tagged at publication; the README install snippets pin `from: "0.1.0"`.
 
 ### Added
 
-- Initial extraction from [Eldr](https://github.com/SnoobieJunes/Eldr):
-  fixed-size bucket padding that defeats ciphertext-length traffic analysis
+- Fixed-size bucket padding, applied to plaintext before AEAD encryption, so
+  ciphertext length leaks a bucket instead of an exact message length:
+  `Padding.pad`, `Padding.unpad`, `Padding.bucket(for:)`, and a
+  caller-supplied bucket ladder
+- Wire format `u32be(length) || plaintext || zero fill`, with the length prefix
+  outside the bucket accounting
+- `unpad` rejects buffers whose declared length does not match the bucket
+  present, so a truncated buffer fails rather than decoding to a shorter
+  plaintext

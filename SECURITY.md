@@ -21,9 +21,14 @@ What to expect (single maintainer):
 
 ## Scope
 
-This library is extracted from [Eldr](https://github.com/SnoobieJunes/Eldr), an
-end-to-end-encrypted messenger. A vulnerability here may affect Eldr too; a
-report to either is treated as a report to both.
+In scope: anything that makes `pad`/`unpad` crash, return the wrong bytes,
+accept a buffer it should reject, or leak more about plaintext length than the
+README claims.
+
+Out of scope, because the library never claimed them — see "What this does not
+claim" in the README: timing, frequency and message-count leakage; tampering
+inside a bucket that your AEAD is responsible for catching; unverified fill
+bytes; and timing side channels.
 
 ## Supported versions
 
